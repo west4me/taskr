@@ -1,0 +1,338 @@
+/* index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+  A softer, pastel palette with calmer background/surface
+  and less "in-your-face" brightness, plus better contrast hovers.
+*/
+:root {
+  color-scheme: light;
+
+  /* === Background & Surface Colors === */
+  --color-background: #ebe7ea; /* Substantially darker than plain white */
+  --color-surface: #f5f2f5; /* Softer off-white with a slight gray-lavender tone */
+  --color-surface-alt: #3a3a3a; /* Alternate dark surface color */
+
+  /* === Primary Theme Colors === */
+  --color-primary: #d74688; /* A subtler pink */
+  --color-primary-hover: #c43f7a; /* Slightly darker pink for hover */
+  --color-primary-rgb: 219, 61, 116; /* RGB for dynamic uses */
+
+  /* === Text Colors === */
+  --color-text: #3f3f3f; /* Deeper gray for better contrast on light BG */
+  --color-text-inverse: #ffffff; /* White text for dark/pink backgrounds */
+
+  /* === Neutral / Secondary Colors === */
+  --color-secondary: #797979; /* Neutral gray for borders/text */
+  --color-secondary-hover: #c43f7a;/* Light hover overlay */
+  --color-secondary-border: rgba(121, 121, 121, 0.25); /* Light border alpha */
+
+  /* === Task-Specific Colors === */
+  --color-task-incomplete: #f9deeb; /* Pastel pink for incomplete tasks */
+  --color-task-completed: #edf8ed; /* Soft green for completed tasks */
+  --color-task-shadow: rgba(0, 0, 0, 0.1); /* Subtle task shadow */
+  --color-task-shadow-hover: rgba(0, 0, 0, 0.2); /* Hover task shadow */
+
+  /* === XP Card Colors === */
+  --color-xp-gradient-start: #ec4899; /* Pink gradient start */
+  --color-xp-gradient-end: #8b5cf6; /* Purple gradient end */
+  --color-xp-text: #ffffff; /* White text for XP cards */
+  --color-xp-icon: rgba(255, 255, 255, 0.9); /* Softer white for icons */
+  --color-xp-select-bg: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+  --color-xp-select-text: rgba(255, 255, 255, 1); /* White text for dropdowns */
+
+  /* === Dropdown Colors === */
+  --color-select-option-text: #3f3f3f !important; /* Dark text for dropdown options */
+  --color-select-option-bg: #f5f2f5 !important; /* Light bg for dropdown options */
+
+  /* === Status / Accent Colors === */
+  --color-accent: #f59e0b; /* Subdued yellow accent */
+  --color-error: #ef5350; /* Slightly softer red */
+  --color-success: #66bb6a; /* Friendly green */
+  --color-info: #26a9e3; /* Calmer blue */
+  --color-warning: #ffa726; /* Orange for warnings */
+
+  /* === Calendar & Muted Colors === */
+  --color-muted: #cecece; /* Light gray for lines/out-of-month days */
+  --color-muted-text: #a4a4a4; /* Lighter text for out-of-month days */
+  --color-day-border: #bababa; /* Day tile borders */
+
+  /* === Modal/Overlay Colors === */
+  --color-overlay: rgba(0, 0, 0, 0.5); /* Modal overlay background */
+
+  /* === Subtle Border Colors === */
+  --color-border-faint: rgba(121, 121, 121, 0.25); /* Faint borders */
+
+  /* === Badge Colors === */
+  --badge-shadow-color: rgba(219, 61, 116, 0.2); /* Shadow color for badges */
+  --badge-gradient-start: rgba(219, 61, 116, 0.05); /* Gradient start */
+  --badge-gradient-end: rgba(219, 61, 116, 0.02); /* Gradient end */
+  --badge-hover-gradient-start: rgba(219, 61, 116, 0.08); /* Hover gradient start */
+  --badge-hover-gradient-end: rgba(219, 61, 116, 0.04); /* Hover gradient end */
+
+  /* === Buttons === */
+  --color-button-default-bg: var(--color-surface);
+  --color-button-default-text: var(--color-text);
+  --color-button-hover-bg: var(--color-primary-hover);
+  --color-button-hover-text: var(--color-text-inverse);
+  --color-button-active-bg: var(--color-primary);
+  --color-button-active-text: var(--color-text-inverse);
+}
+
+/* Base Body Styles */
+body {
+  @apply bg-[var(--color-background)] text-[var(--color-text)] min-h-screen;
+}
+
+/* Universal Button Styles */
+.btn {
+  @apply px-4 py-2 rounded-lg text-center transition-colors shadow-md;
+  background-color: var(--color-button-default-bg);
+  color: var(--color-button-default-text);
+}
+
+/* Primary Button */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+  color: var(--color-text-inverse);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: var(--color-button-default-bg);
+  color: var(--color-button-default-text);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-secondary-hover);
+  color: var(--color-text-inverse);
+}
+
+/* Active State - Keep this if you still want it */
+.btn.active {
+  background-color: var(--color-button-active-bg);
+  color: var(--color-button-active-text);
+}
+
+/* Task Cards */
+.task-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: ew-resize;
+  min-height: 15rem;
+  overflow: hidden;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  box-shadow: 0 4px 6px var(--color-task-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px var(--color-task-shadow-hover);
+}
+
+.task-card button,
+.task-card a {
+  cursor: pointer;
+}
+
+.task-card .relative button {
+  cursor: pointer;
+}
+
+
+.prose code {
+  color: var(--color-primary);
+}
+
+.prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  color: var(--color-primary);
+}
+
+.prose :where(h1, h2, h3, h4, h5, h6):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  color: var(--color-primary);
+}
+
+.prose :where(strong):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+
+/* Badge Styles */
+.badges-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 16px;
+}
+
+.badge-earned {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  border-radius: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.badge-earned:hover {
+  transform: scale(1.1);
+}
+
+.badge-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: linear-gradient(
+    135deg,
+    var(--badge-gradient-start) 0%,
+    var(--badge-gradient-end) 100%
+  );
+  border: 2px dashed var(--color-primary);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 140px;
+  height: 160px;
+  position: relative;
+}
+
+.badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  height: 48px;
+}
+
+.badge-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  width: 100%;
+  margin-bottom: 4px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.badge-description {
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+  text-align: center;
+  width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+  margin: 0 auto;
+}
+
+.badge-progress {
+  font-size: 0.75rem;
+  color: var(--color-muted-text);
+  text-align: center;
+}
+
+/* Progress Bar */
+.xp-progress-bar {
+  position: relative;
+  height: 16px;
+  background: var(--color-xp-select-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.xp-progress-fill {
+  height: 100%;
+  background-color: var(--color-xp-text);
+  position: relative;
+  transition: width 0.3s ease;
+}
+
+.xp-progress-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0px,
+    transparent 10px,
+    rgba(255, 255, 255, 0.1) 10px,
+    rgba(255, 255, 255, 0.1) 20px
+  );
+}
+
+/* MenuDropdown Constraints */
+.fixed-menu-dropdown {
+  max-width: 200px;
+  min-height: 160px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+}
+
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-secondary-border);
+  border-radius: 4px;
+  border: 2px solid var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primary);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--color-surface);
+}
+
+.sidebar-container::-webkit-scrollbar-track {
+  background: transparent; /* Makes the track invisible */
+}
+
+.sidebar-container::-webkit-scrollbar-thumb {
+  background-color: rgba(121, 121, 121, 0.2); /* Light gray */
+  border-radius: 4px;
+  opacity: 0; /* Hidden by default */
+}
+
+.sidebar-container:hover::-webkit-scrollbar-thumb {
+  opacity: 1; /* Show scrollbar thumb on hover */
+  background-color: var(--color-secondary); /* Neutral gray */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.sidebar-container {
+  scrollbar-width: thin; /* Firefox-specific property */
+  scrollbar-color: rgba(121, 121, 121, 0.2) transparent;
+}
+
+.sidebar-container:hover {
+  scrollbar-color: var(--color-secondary) transparent;
+}
+
+
+
+
