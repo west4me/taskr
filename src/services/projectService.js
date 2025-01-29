@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { useAuth } from '../contexts/AuthContext/useAuth';
+import useAuth from '../contexts/AuthContext/useAuth';
 import {
   collection,
   getDocs,
