@@ -3,6 +3,7 @@ import { MoreVertical, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import MenuDropdown from '../shared/MenuDropdown';
+import { useNavigate } from 'react-router-dom';
 
 function getTagColor(type, value) {
     if (type === 'difficulty') {
@@ -33,6 +34,7 @@ function getTagColor(type, value) {
 }
 
 const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onArchive }) => {
+    const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -88,6 +90,11 @@ const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onAr
         }
 
         setIsMenuOpen((prev) => !prev); // Toggle the menu state
+    };
+
+    const handleProjectClick = (e, projectId) => {
+        e.stopPropagation();
+        navigate(`/project/${projectId}`);
     };
 
     return (
@@ -194,6 +201,25 @@ const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onAr
                     {task.deadline ? new Date(task.deadline + 'T00:00:00').toLocaleDateString() : 'No due date'}
                 </span>
             </div>
+
+            {/* Project Tags */}
+            {task.projects?.length > 0 && (
+                <div className="flex gap-2 mt-4">
+                    {task.projects.map((project) => (
+                        <button
+                            key={project.id}
+                            onClick={(e) => handleProjectClick(e, project.id)}
+                            className="px-2 py-1 text-xs rounded-full 
+                         bg-[var(--color-primary)]/20 
+                         text-[var(--color-primary)]
+                         hover:bg-[var(--color-primary)]/30 
+                         transition-colors"
+                        >
+                            {project.name}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* ADDED: Menu Dropdown Portal */}
             {isMenuOpen && menuVisible && ReactDOM.createPortal(
