@@ -35,18 +35,6 @@ const ProjectView = () => {
         projects
     } = useTask();
 
-    console.log("useTask() returned:", {
-        tasks,
-        archivedTasks,
-        columns,
-        completeTask,
-        updateTask,
-        deleteTask,
-        archiveTask,
-        createTask,
-        projects
-    });
-
     useEffect(() => {
         if (!tasks || !Array.isArray(tasks)) {
             console.warn("Tasks is not an array or is undefined:", tasks);
@@ -54,17 +42,38 @@ const ProjectView = () => {
             return;
         }
 
-        const filteredTasks = (showArchived ? archivedTasks : tasks).filter(task =>
-            task.projects && Array.isArray(task.projects) &&
-            task.projects.some(project => String(project.id) === String(projectId))
-        );
+        let filteredTasks = showArchived ? archivedTasks : tasks;
 
-        console.log("Filtered tasks for project:", filteredTasks);
+        if (selectedProject !== 'All Projects') {
+            filteredTasks = filteredTasks.filter(task =>
+                task.projects &&
+                Array.isArray(task.projects) &&
+                task.projects.some(project => project.name === selectedProject)
+            );
+        } else {
+            filteredTasks = filteredTasks.filter(task =>
+                task.projects &&
+                Array.isArray(task.projects) &&
+                task.projects.some(project => String(project.id) === String(projectId))
+            );
+        }
+
         setProjectTasks(filteredTasks);
+    }, [tasks, archivedTasks, projectId, projects, showArchived, selectedProject]);
 
+    useEffect(() => {
         const projectMatch = projects?.find(p => String(p.id) === String(projectId));
-        setProjectName(projectMatch?.name || 'Project');
-    }, [tasks, archivedTasks, projectId, projects, showArchived]);
+        if (projectMatch) {
+            setSelectedProject(projectMatch.name);
+            setProjectName(projectMatch.name);
+        }
+    }, [projects, projectId]);
+
+    const handleProjectSelect = (project) => {
+        setSelectedProject(project);
+        setProjectName(project);
+        setIsProjectDropdownOpen(false);
+    };
 
     const handleSubmitTask = async (taskData) => {
         try {
@@ -132,10 +141,7 @@ const ProjectView = () => {
                                             .map((project, index) => (
                                                 <li
                                                     key={index}
-                                                    onClick={() => {
-                                                        setSelectedProject(project);
-                                                        setIsProjectDropdownOpen(false);
-                                                    }}
+                                                    onClick={() => handleProjectSelect(project)}
                                                     className="cursor-pointer px-4 py-2 hover:bg-gray-200"
                                                 >
                                                     {project}
