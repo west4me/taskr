@@ -97,9 +97,28 @@ const ProjectView = () => {
     const upcomingTasks = projectTasks.filter(task =>
         !task.completed && task.deadline && new Date(task.deadline) >= today
     ).length;
-    const overdueTasks = projectTasks.filter(task =>
-        !task.completed && task.deadline && new Date(task.deadline) < today
-    ).length;
+    console.log("Today's Date:", today.toISOString());
+
+    const overdueTasks = projectTasks.filter(task => {
+        if (!task.completed && task.deadline) {
+            const taskDeadline = new Date(task.deadline);
+            console.log(`Task ID: ${task.id}, Deadline: ${task.deadline}, Parsed: ${taskDeadline.toISOString()}, Overdue: ${taskDeadline < today}`);
+
+            if (!isNaN(taskDeadline.getTime())) {
+                return taskDeadline < today;
+            }
+        }
+        return false;
+    }).length;
+
+    const testOverdueTask = {
+        id: "test-task",
+        completed: false,
+        deadline: "2025-01-25",  // Should be overdue
+    };
+    console.log("Test Overdue:", new Date(testOverdueTask.deadline) < today);
+
+
 
     const projectList = projects ? ['All Projects', ...projects.map(p => p.name)] : ['All Projects'];
 
@@ -151,6 +170,14 @@ const ProjectView = () => {
                                 </div>
                             )}
                         </div>
+                        {/* Show Archived Toggle Button */}
+                        <button
+                            onClick={() => setShowArchived(prev => !prev)}
+                            className={`px-4 py-2 border rounded-lg transition-colors ${showArchived ? 'bg-gray-800 text-white' : 'bg-white text-black'
+                                }`}
+                        >
+                            {showArchived ? "Hide Archived" : "Show Archived"}
+                        </button>
                     </div>
                 </div>
 
@@ -159,11 +186,24 @@ const ProjectView = () => {
                     <h1 className="text-2xl font-bold text-[var(--color-text)] mb-6">{projectName}</h1>
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>Total: {totalTasks}</div>
-                        <div>Completed: {completedTasks}</div>
-                        <div>Upcoming: {upcomingTasks}</div>
-                        <div>Overdue: {overdueTasks}</div>
+                        <div className="flex items-center gap-2 text-[var(--color-text)]">
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <span>Total: {totalTasks}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[var(--color-text)]">
+                            <CheckCircle className="w-5 h-5 text-blue-500" />
+                            <span>Completed: {completedTasks}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[var(--color-text)]">
+                            <Clock className="w-5 h-5 text-yellow-500" />
+                            <span>Upcoming: {upcomingTasks}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[var(--color-text)]">
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                            <span>Overdue: {overdueTasks}</span>
+                        </div>
                     </div>
+
                 </div>
 
                 {/* Task Grid */}
