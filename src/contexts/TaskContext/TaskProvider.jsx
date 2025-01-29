@@ -16,6 +16,7 @@ import {
 } from '../../services/taskService';
 import { getUserProfile } from '../../services/userService';
 import { createColumn } from '../../services/taskService';
+import { getUserProjects } from '../../services/projectService';
 
 export const TaskProvider = ({ children }) => {
     const [tasks, setTasks] = useState([]);
@@ -31,16 +32,19 @@ export const TaskProvider = ({ children }) => {
         currentStreak: 0,
         nextLevelXP: 1000,
     });
+    const [projects, setProjects] = useState([]);
+
 
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [userTasks, userColumns, archivedTasksData, userBadges, profile] = await Promise.all([
+                const [userTasks, userColumns, archivedTasksData, userBadges, profile, userProjects] = await Promise.all([
                     getUserTasks(user.uid),
                     getColumns(user.uid),
                     getArchivedTasks(user.uid),
                     getUserBadges(user.uid),
-                    getUserProfile(user.uid)
+                    getUserProfile(user.uid),
+                    getUserProjects(user.uid),
                 ]);
 
                 if (!userTasks || !Array.isArray(userTasks) || !userColumns || !Array.isArray(userColumns)) {
@@ -77,6 +81,7 @@ export const TaskProvider = ({ children }) => {
                 setColumns(columnsToUse.sort((a, b) => a.order - b.order));
                 setBadges(userBadges);
                 setUserData(profile);
+                setProjects(userProjects);
             } catch (error) {
                 console.error('Error loading tasks:', error);
             } finally {
@@ -177,6 +182,8 @@ export const TaskProvider = ({ children }) => {
         badges,
         setBadges,
         userData,
+        projects,
+        setProjects,
         setUserData,
         createTask: handleCreateTask,
         completeTask: handleTaskComplete,

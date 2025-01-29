@@ -1,26 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Clock, AlertCircle, Search, Archive } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, AlertCircle, Filter, Search } from 'lucide-react';
 import { useTask } from '../../contexts/TaskContext';
-import useAuth from '../../contexts/AuthContext/useAuth'; // ✅ Correct usage
 import TaskCard from '../kanban/TaskCard';
 import TaskModal from '../tasks/TaskModal';
 import TaskDetailsSidebar from '../tasks/TaskDetailsSidebar';
 import ErrorBoundary from '../ErrorBoundary';
-import { getUserProjects } from '../../services/projectService';
 
 const ProjectView = () => {
     const { projectId } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();  // ✅ useAuth is only used here, in a React component
+
+    // State variables
     const [selectedTask, setSelectedTask] = useState(null);
     const [editingTask, setEditingTask] = useState(null);
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [isTaskSidebarOpen, setIsTaskSidebarOpen] = useState(false);
     const [projectTasks, setProjectTasks] = useState([]);
     const [projectName, setProjectName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [showArchived, setShowArchived] = useState(false);
-    const [projectSearchQuery, setProjectSearchQuery] = useState('');
-    const [projects, setProjects] = useState([]);
+    const [selectedProject, setSelectedProject] = useState('All Projects');
+    const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
 
     const {
         tasks,
@@ -29,40 +30,59 @@ const ProjectView = () => {
         completeTask,
         updateTask,
         deleteTask,
-        archiveTask
+        archiveTask,
+        createTask,
+        projects
     } = useTask();
 
-    // Load project tasks
+    console.log("useTask() returned:", {
+        tasks,
+        archivedTasks,
+        columns,
+        completeTask,
+        updateTask,
+        deleteTask,
+        archiveTask,
+        createTask,
+        projects
+    });
+
     useEffect(() => {
-        const filteredTasks = tasks.filter(task =>
-            task.projects?.some(project => project.id === projectId)
+        if (!tasks || !Array.isArray(tasks)) {
+            console.warn("Tasks is not an array or is undefined:", tasks);
+            setProjectTasks([]);
+            return;
+        }
+
+        const filteredTasks = (showArchived ? archivedTasks : tasks).filter(task =>
+            task.projects && Array.isArray(task.projects) &&
+            task.projects.some(project => String(project.id) === String(projectId))
         );
+
+        console.log("Filtered tasks for project:", filteredTasks);
         setProjectTasks(filteredTasks);
 
-        const projectName = filteredTasks[0]?.projects?.find(p => p.id === projectId)?.name || 'Project';
-        setProjectName(projectName);
-    }, [tasks, projectId]);
+        const projectMatch = projects?.find(p => String(p.id) === String(projectId));
+        setProjectName(projectMatch?.name || 'Project');
+    }, [tasks, archivedTasks, projectId, projects, showArchived]);
 
-    // ✅ Load projects using userId (only if user is logged in)
-    useEffect(() => {
-        if (!user?.uid) return; // Ensure user is loaded
-
-        const fetchProjects = async () => {
-            try {
-                const userProjects = await getUserProjects(user.uid);
-                setProjects(userProjects);
-            } catch (error) {
-                console.error('Error fetching projects:', error);
+    const handleSubmitTask = async (taskData) => {
+        try {
+            if (editingTask) {
+                await updateTask(editingTask.id, taskData);
+            } else {
+                await createTask(taskData);
             }
-        };
-
-        fetchProjects();
-    }, [user?.uid]);
+            setIsTaskModalOpen(false);
+            setEditingTask(null);
+        } catch (error) {
+            console.error("Error submitting task:", error);
+        }
+    };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Task Metrics
     const totalTasks = projectTasks.length;
     const completedTasks = projectTasks.filter(task => task.completed).length;
     const upcomingTasks = projectTasks.filter(task =>
@@ -72,16 +92,7 @@ const ProjectView = () => {
         !task.completed && task.deadline && new Date(task.deadline) < today
     ).length;
 
-    // Search & Archive Filtering
-    const filteredTasks = projectTasks.filter(task =>
-        task.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    const displayTasks = showArchived ? archivedTasks : filteredTasks;
-
-    // Filter projects based on user input
-    const filteredProjects = projects.filter(project =>
-        project.name.toLowerCase().includes(projectSearchQuery.toLowerCase())
-    );
+    const projectList = projects ? ['All Projects', ...projects.map(p => p.name)] : ['All Projects'];
 
     return (
         <div className="min-h-screen bg-[var(--color-background)] p-6">
@@ -97,73 +108,83 @@ const ProjectView = () => {
                     </button>
 
                     <div className="flex gap-4">
-                        {/* Project Search Dropdown */}
+                        {/* Project Selection Dropdown */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search projects..."
-                                value={projectSearchQuery}
-                                onChange={(e) => setProjectSearchQuery(e.target.value)}
-                                className="pl-10 pr-4 py-2 border rounded-lg bg-white text-black"
-                            />
-                            {projectSearchQuery && (
-                                <div className="absolute bg-white border mt-1 rounded-lg w-full shadow-md z-10">
-                                    {filteredProjects.length > 0 ? (
-                                        filteredProjects.map((project) => (
-                                            <div
-                                                key={project.id}
-                                                onClick={() => navigate(`/project/${project.id}`)}
-                                                className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                                            >
-                                                {project.name}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="px-4 py-2 text-gray-500">No results found</div>
-                                    )}
+                            <button
+                                onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                                className="flex items-center gap-2 border rounded-lg py-2 px-4 bg-white text-black"
+                            >
+                                <Filter className="w-4 h-4" />
+                                {selectedProject}
+                            </button>
+
+                            {isProjectDropdownOpen && (
+                                <div className="absolute top-full mt-2 bg-white border rounded-lg shadow-lg w-64 z-50">
+                                    <input
+                                        type="text"
+                                        placeholder="Search projects..."
+                                        className="w-full p-2 border-b"
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    <ul className="max-h-48 overflow-y-auto">
+                                        {projectList
+                                            .filter(p => p.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .map((project, index) => (
+                                                <li
+                                                    key={index}
+                                                    onClick={() => {
+                                                        setSelectedProject(project);
+                                                        setIsProjectDropdownOpen(false);
+                                                    }}
+                                                    className="cursor-pointer px-4 py-2 hover:bg-gray-200"
+                                                >
+                                                    {project}
+                                                </li>
+                                            ))}
+                                    </ul>
                                 </div>
                             )}
                         </div>
-
-                        {/* Task Search */}
-                        <div className="relative">
-                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search tasks..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 pr-4 py-2 border rounded-lg bg-white text-black"
-                            />
-                        </div>
-
-                        {/* Show Archived Toggle */}
-                        <button
-                            onClick={() => setShowArchived(!showArchived)}
-                            className={`btn ${showArchived ? 'btn-secondary' : 'btn-outline'}`}
-                        >
-                            <Archive className="w-4 h-4" />
-                            {showArchived ? "Hide Archived" : "Show Archived"}
-                        </button>
                     </div>
                 </div>
 
-                <ErrorBoundary>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {displayTasks.map(task => (
+                {/* Project Metrics */}
+                <div className="bg-[var(--color-surface)] rounded-xl p-6 mb-6">
+                    <h1 className="text-2xl font-bold text-[var(--color-text)] mb-6">{projectName}</h1>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>Total: {totalTasks}</div>
+                        <div>Completed: {completedTasks}</div>
+                        <div>Upcoming: {upcomingTasks}</div>
+                        <div>Overdue: {overdueTasks}</div>
+                    </div>
+                </div>
+
+                {/* Task Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <ErrorBoundary>
+                        {projectTasks.map(task => (
                             <TaskCard
                                 key={task.id}
                                 task={task}
                                 onComplete={() => completeTask(task.id)}
+                                onEdit={() => {
+                                    setEditingTask(task);
+                                    setIsTaskModalOpen(true);
+                                }}
                                 onDelete={() => deleteTask(task.id)}
-                                onEdit={() => setEditingTask(task)}
-                                onSelect={() => setSelectedTask(task)}
                                 onArchive={() => archiveTask(task.id)}
+                                onSelect={() => {
+                                    setSelectedTask(task);
+                                    setIsTaskSidebarOpen(true);
+                                }}
                             />
                         ))}
-                    </div>
-                </ErrorBoundary>
+                    </ErrorBoundary>
+                </div>
+
+                <TaskModal task={editingTask} isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} onSubmit={handleSubmitTask} columns={columns || []} />
+                <TaskDetailsSidebar task={selectedTask} isOpen={isTaskSidebarOpen} onClose={() => setIsTaskSidebarOpen(false)} />
             </div>
         </div>
     );
