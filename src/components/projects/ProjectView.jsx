@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Clock, AlertCircle, Search, Archive, Folder } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, AlertCircle, Search, Archive } from 'lucide-react';
 import { useTask } from '../../contexts/TaskContext';
+import useAuth from '../../contexts/AuthContext/useAuth'; // ✅ Correct usage
 import TaskCard from '../kanban/TaskCard';
 import TaskModal from '../tasks/TaskModal';
 import TaskDetailsSidebar from '../tasks/TaskDetailsSidebar';
@@ -11,14 +12,15 @@ import { getUserProjects } from '../../services/projectService';
 const ProjectView = () => {
     const { projectId } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();  // ✅ useAuth is only used here, in a React component
     const [selectedTask, setSelectedTask] = useState(null);
     const [editingTask, setEditingTask] = useState(null);
     const [projectTasks, setProjectTasks] = useState([]);
     const [projectName, setProjectName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [showArchived, setShowArchived] = useState(false);
+    const [projectSearchQuery, setProjectSearchQuery] = useState('');
     const [projects, setProjects] = useState([]);
-    const [selectedProject, setSelectedProject] = useState(projectId);
 
     const {
         tasks,
@@ -30,26 +32,35 @@ const ProjectView = () => {
         archiveTask
     } = useTask();
 
-    useEffect(() => {
-        const fetchProjects = async () => {
-            const userProjects = await getUserProjects();
-            setProjects(userProjects);
-        };
-        fetchProjects();
-    }, []);
-
+    // Load project tasks
     useEffect(() => {
         const filteredTasks = tasks.filter(task =>
-            task.projects?.some(project => project.id === selectedProject)
+            task.projects?.some(project => project.id === projectId)
         );
         setProjectTasks(filteredTasks);
 
-        const projectTitle = filteredTasks[0]?.projects?.find(p => p.id === selectedProject)?.name || 'Project';
-        setProjectName(projectTitle);
-    }, [tasks, selectedProject]);
+        const projectName = filteredTasks[0]?.projects?.find(p => p.id === projectId)?.name || 'Project';
+        setProjectName(projectName);
+    }, [tasks, projectId]);
+
+    // ✅ Load projects using userId (only if user is logged in)
+    useEffect(() => {
+        if (!user?.uid) return; // Ensure user is loaded
+
+        const fetchProjects = async () => {
+            try {
+                const userProjects = await getUserProjects(user.uid);
+                setProjects(userProjects);
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+            }
+        };
+
+        fetchProjects();
+    }, [user?.uid]);
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Strip time to only compare dates
+    today.setHours(0, 0, 0, 0);
 
     // Task Metrics
     const totalTasks = projectTasks.length;
@@ -61,11 +72,16 @@ const ProjectView = () => {
         !task.completed && task.deadline && new Date(task.deadline) < today
     ).length;
 
-    // Task Filtering
+    // Search & Archive Filtering
     const filteredTasks = projectTasks.filter(task =>
         task.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
     const displayTasks = showArchived ? archivedTasks : filteredTasks;
+
+    // Filter projects based on user input
+    const filteredProjects = projects.filter(project =>
+        project.name.toLowerCase().includes(projectSearchQuery.toLowerCase())
+    );
 
     return (
         <div className="min-h-screen bg-[var(--color-background)] p-6">
@@ -81,23 +97,36 @@ const ProjectView = () => {
                     </button>
 
                     <div className="flex gap-4">
-                        {/* Project Selector */}
+                        {/* Project Search Dropdown */}
                         <div className="relative">
-                            <Folder className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                            <select
-                                value={selectedProject}
-                                onChange={(e) => setSelectedProject(e.target.value)}
+                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search projects..."
+                                value={projectSearchQuery}
+                                onChange={(e) => setProjectSearchQuery(e.target.value)}
                                 className="pl-10 pr-4 py-2 border rounded-lg bg-white text-black"
-                            >
-                                {projects.map(project => (
-                                    <option key={project.id} value={project.id}>
-                                        {project.name}
-                                    </option>
-                                ))}
-                            </select>
+                            />
+                            {projectSearchQuery && (
+                                <div className="absolute bg-white border mt-1 rounded-lg w-full shadow-md z-10">
+                                    {filteredProjects.length > 0 ? (
+                                        filteredProjects.map((project) => (
+                                            <div
+                                                key={project.id}
+                                                onClick={() => navigate(`/project/${project.id}`)}
+                                                className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                                            >
+                                                {project.name}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="px-4 py-2 text-gray-500">No results found</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Search Input */}
+                        {/* Task Search */}
                         <div className="relative">
                             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                             <input
@@ -112,8 +141,7 @@ const ProjectView = () => {
                         {/* Show Archived Toggle */}
                         <button
                             onClick={() => setShowArchived(!showArchived)}
-                            className={`flex items-center gap-2 px-4 py-2 border rounded-lg ${showArchived ? 'bg-[var(--color-error)] text-white' : 'bg-white text-black'
-                                }`}
+                            className={`btn ${showArchived ? 'btn-secondary' : 'btn-outline'}`}
                         >
                             <Archive className="w-4 h-4" />
                             {showArchived ? "Hide Archived" : "Show Archived"}
@@ -121,74 +149,19 @@ const ProjectView = () => {
                     </div>
                 </div>
 
-                <div className="bg-[var(--color-surface)] rounded-xl p-6 mb-6">
-                    <h1 className="text-2xl font-bold text-[var(--color-text)] mb-6">
-                        {projectName}
-                    </h1>
-
-                    {/* Project Metrics */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="bg-[var(--color-surface)]/50 rounded-lg p-4">
-                            <div className="flex items-center gap-2 text-[var(--color-text)]">
-                                <CheckCircle className="w-5 h-5" />
-                                <span className="text-sm">Total Tasks</span>
-                            </div>
-                            <p className="text-2xl font-bold text-[var(--color-text)] mt-2">
-                                {totalTasks}
-                            </p>
-                        </div>
-
-                        <div className="bg-[var(--color-success)]/10 rounded-lg p-4">
-                            <div className="flex items-center gap-2 text-[var(--color-success)]">
-                                <CheckCircle className="w-5 h-5" />
-                                <span className="text-sm">Completed</span>
-                            </div>
-                            <p className="text-2xl font-bold text-[var(--color-success)] mt-2">
-                                {completedTasks}
-                            </p>
-                        </div>
-
-                        <div className="bg-[var(--color-primary)]/10 rounded-lg p-4">
-                            <div className="flex items-center gap-2 text-[var(--color-primary)]">
-                                <Clock className="w-5 h-5" />
-                                <span className="text-sm">Upcoming</span>
-                            </div>
-                            <p className="text-2xl font-bold text-[var(--color-primary)] mt-2">
-                                {upcomingTasks}
-                            </p>
-                        </div>
-
-                        <div className="bg-[var(--color-error)]/10 rounded-lg p-4">
-                            <div className="flex items-center gap-2 text-[var(--color-error)]">
-                                <AlertCircle className="w-5 h-5" />
-                                <span className="text-sm">Overdue</span>
-                            </div>
-                            <p className="text-2xl font-bold text-[var(--color-error)] mt-2">
-                                {overdueTasks}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
                 <ErrorBoundary>
-                    {/* Tasks Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {displayTasks.map(task => (
                             <TaskCard
                                 key={task.id}
                                 task={task}
-                                onComplete={completeTask}
-                                onDelete={deleteTask}
-                                onEdit={setEditingTask}
-                                onSelect={setSelectedTask}
-                                onArchive={archiveTask}
+                                onComplete={() => completeTask(task.id)}
+                                onDelete={() => deleteTask(task.id)}
+                                onEdit={() => setEditingTask(task)}
+                                onSelect={() => setSelectedTask(task)}
+                                onArchive={() => archiveTask(task.id)}
                             />
                         ))}
-                        {displayTasks.length === 0 && (
-                            <div className="col-span-full text-center py-12 text-[var(--color-secondary)]">
-                                No tasks found.
-                            </div>
-                        )}
                     </div>
                 </ErrorBoundary>
             </div>

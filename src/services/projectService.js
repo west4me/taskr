@@ -1,25 +1,22 @@
 import { db } from './firebase';
-import useAuth from '../contexts/AuthContext/useAuth';
 import {
   collection,
   getDocs,
   addDoc,
 } from 'firebase/firestore';
 
-export const getUserProjects = async () => {
+export const getUserProjects = async (userId) => {
+  if (!userId) {
+    console.error("getUserProjects: Missing userId");
+    return [];
+  }
+
   try {
-    const { user } = useAuth(); // Get current user
-    if (!user || !user.uid) {
-      console.error("getUserProjects: userId is undefined");
-      return [];
-    }
-
-    const projectsRef = collection(db, 'users', user.uid, 'projects');
+    const projectsRef = collection(db, 'users', userId, 'projects');
     const snapshot = await getDocs(projectsRef);
-
     return snapshot.docs.map(doc => ({
       id: doc.id,
-      name: doc.data().name || 'Untitled Project',
+      name: doc.data().name
     }));
   } catch (error) {
     console.error('Error fetching projects:', error);
