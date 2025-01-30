@@ -44,28 +44,26 @@ A gamified task management app that combines productivity with engagement. Built
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/taskr.git
-cd taskr
+    git clone https://github.com/yourusername/taskr.git
+    cd taskr
 
 2. Install dependencies:
-```bash
+  - ```bash
+    
 
 3. Set up your Firebase configuration:
-- Create a new Firebase project
-- Enable Authentication and Firestore
-- Create a .env file in the root directory:
-
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-
+  - Create a new Firebase project
+  - Enable Authentication and Firestore
+  - Create a .env file in the root directory:
+    - VITE_FIREBASE_API_KEY=your_api_key
+    - VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+    - VITE_FIREBASE_PROJECT_ID=your_project_id
+    - VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+    - VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+    - VITE_FIREBASE_APP_ID=your_app_id
 4. Start the development server:
-```bash
-
-npm run dev
+  - ```bash
+    npm run dev
 
 ## Features In Detail
 
