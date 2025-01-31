@@ -8,7 +8,7 @@ import LoginForm from './components/auth/LoginForm';
 
 const PrivateRoute = ({ children }) => {
     const auth = useAuth();
-    return auth?.user ? children : <Navigate to="/login" />;
+    return auth?.user ? children : <Navigate to="/taskr/login" />;
 };
 
 const AppContent = () => {
@@ -21,18 +21,13 @@ const AppContent = () => {
     return (
         <TaskProvider>
             <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/login" element={<LoginForm />} />
-                <Route
-                    path="/project/:projectId"
-                    element={
-                        <PrivateRoute>
-                            <ProjectView />
-                        </PrivateRoute>
-                    }
-                />
-                {/* Catch-all redirect to home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* Specific routes first */}
+                <Route path="/taskr/project/:projectId" element={<ProjectView />} />
+                <Route path="/taskr/login" element={<LoginForm />} />
+                <Route path="/taskr" element={<Dashboard />} />
+                {/* Redirects last */}
+                <Route path="/" element={<Navigate to="/taskr" replace />} />
+                <Route path="*" element={<Navigate to="/taskr" replace />} />
             </Routes>
         </TaskProvider>
     );

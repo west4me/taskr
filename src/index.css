@@ -127,7 +127,8 @@ body {
   flex-direction: column;
   justify-content: space-between;
   cursor: ew-resize;
-  min-height: 15rem;
+  min-height: 18rem;
+  margin-bottom: 1rem;
   overflow: hidden;
   padding: 1rem;
   border-radius: 0.5rem;
@@ -136,9 +137,17 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.grid-cols-1 .task-card {
+  margin-bottom: 0;
+}
 .task-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 8px var(--color-task-shadow-hover);
+}
+
+.absolute.w-full.z-10 .task-card {
+  min-height: auto;
+  margin-bottom: 2.5rem;
 }
 
 .task-card button,

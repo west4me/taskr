@@ -127,7 +127,7 @@ const ProjectView = () => {
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/taskr')}
                         className="flex items-center gap-2 text-[var(--color-secondary)] 
                                 hover:text-[var(--color-text)] transition-colors"
                     >

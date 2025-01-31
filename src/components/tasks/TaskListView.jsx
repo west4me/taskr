@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { ListFilter, Check, Search } from 'lucide-react';
@@ -55,7 +56,7 @@ const TaskListView = ({ tasks, onTaskComplete, onTaskDelete, onTaskUpdate, onArc
     };
 
     return (
-        <div className="w-full bg-[var(--color-surface)]/50 rounded-xl p-6 flex flex-col flex-grow">
+        <div className="w-full bg-[var(--color-surface)]/50 rounded-xl p-2 flex flex-col flex-grow">
             {/* Header */}
             <div className="flex flex-col gap-4 mb-6">
                 <div className="flex justify-between items-center">
@@ -169,11 +170,11 @@ const TaskListView = ({ tasks, onTaskComplete, onTaskDelete, onTaskUpdate, onArc
             </div>
 
             {/* Task Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                 {filteredTasks.map(task => (
                     <div
                         key={task.id}
-                        className="relative h-52"
+                        className="relative h-72 transition-all duration-200"
                     >
                         <div
                             className={`${expandedTaskId === task.id ? 'absolute w-full z-10' : ''}`}

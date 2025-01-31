@@ -244,7 +244,7 @@ const KanbanBoard = ({
   };
 
   return (
-    <div className="w-full bg-[var(--color-surface)]/50 rounded-xl p-6 flex flex-col flex-grow overflow-hidden">
+    <div className="w-full bg-[var(--color-surface)]/50 rounded-xl p-2 flex flex-col flex-grow overflow-hidden">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-[var(--color-text)]">Your Tasks</h2>
         <button
@@ -260,7 +260,7 @@ const KanbanBoard = ({
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 flex-grow overflow-auto">
           {localColumns.map((column, index) => (
-            <div key={column.id} className="bg-[var(--color-surface)] rounded-lg p-4 flex flex-col min-h-[500px]">
+            <div key={column.id} className="bg-[var(--color-surface)] rounded-lg p-2 flex flex-col min-h-[500px]">
               <div className="flex items-center justify-between mb-4">
                 {editingColumn === column.id ? (
                   <input
@@ -285,7 +285,7 @@ const KanbanBoard = ({
                     autoFocus
                   />
                 ) : (
-                  <h3 className="font-medium text-lg text-[var(--color-text)]">{column.title}</h3>
+                    <h3 className="font-medium text-lg text-[var(--color-text)] pl-2 -mb-2">{column.title}</h3>
                 )}
                 <div className="flex items-center gap-2">
                   <button
@@ -309,7 +309,7 @@ const KanbanBoard = ({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`flex-1 rounded-lg p-2 space-y-2 ${snapshot.isDraggingOver
+                    className={`flex-1 rounded-lg p-1 space-y-1 ${snapshot.isDraggingOver
                       ? 'bg-[var(--color-primary)]/10'
                       : 'bg-[var(--color-background)]'
                       }`}

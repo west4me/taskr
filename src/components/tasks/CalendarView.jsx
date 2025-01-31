@@ -189,7 +189,7 @@ const CalendarView = ({ tasks, onTaskUpdate, onDelete, onTaskComplete, onArchive
 
   return (
     <div className="w-full bg-[var(--color-surface)]/50 rounded-xl p-6 flex flex-col flex-grow">
-      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h2 className="text-xl font-semibold text-[var(--color-text)]">
           Calendar View
         </h2>
@@ -220,7 +220,7 @@ const CalendarView = ({ tasks, onTaskUpdate, onDelete, onTaskComplete, onArchive
           </div>
         )}
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto justify-center">
           <button
             onClick={movePrev}
             className="p-2 rounded-lg transition-colors hover:bg-[var(--color-secondary)]/10"

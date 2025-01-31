@@ -94,7 +94,7 @@ const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onAr
 
     const handleProjectClick = (e, projectId) => {
         e.stopPropagation();
-        navigate(`/project/${projectId}`);
+        navigate(`/taskr/project/${projectId}`);
     };
 
     return (
@@ -136,7 +136,7 @@ const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onAr
 
             {/* Description (if any) */}
             {task.description && (
-                <div className="mb-3">
+                <div className="mb-3 overflow-hidden">
                     <div
                         className={`
                             text-[var(--color-text)]/60 text-sm 
