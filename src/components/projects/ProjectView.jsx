@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Clock, AlertCircle, Filter, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, AlertCircle, Filter } from 'lucide-react';
 import { useTask } from '../../contexts/TaskContext';
 import TaskCard from '../kanban/TaskCard';
 import TaskModal from '../tasks/TaskModal';

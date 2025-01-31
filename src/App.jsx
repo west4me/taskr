@@ -22,9 +22,19 @@ const AppContent = () => {
         <TaskProvider>
             <Routes>
                 {/* Specific routes first */}
-                <Route path="/taskr/project/:projectId" element={<ProjectView />} />
+                <Route path="/taskr/project/:projectId" element={
+                    <PrivateRoute>
+                        <ProjectView />
+                    </PrivateRoute>
+                } />
+                <Route path="/taskr" element={
+                    <PrivateRoute>
+                        <Dashboard />
+                    </PrivateRoute>
+                } />
+
                 <Route path="/taskr/login" element={<LoginForm />} />
-                <Route path="/taskr" element={<Dashboard />} />
+
                 {/* Redirects last */}
                 <Route path="/" element={<Navigate to="/taskr" replace />} />
                 <Route path="*" element={<Navigate to="/taskr" replace />} />
@@ -32,6 +42,7 @@ const AppContent = () => {
         </TaskProvider>
     );
 };
+
 
 export default function App() {
     return (
