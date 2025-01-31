@@ -14,6 +14,7 @@ import {
   orderBy,
   writeBatch,
   limit,
+  increment,
 } from 'firebase/firestore';
 
 // ------------------
@@ -39,7 +40,8 @@ export const createTask = async (userId, taskData) => {
       completed: false,
       createdAt: new Date().toISOString(),
       projects: taskData.projects || [],
-      order: highestOrder + 1000 // Leave space between tasks for future reordering
+      order: highestOrder + 1000,
+      commentCount: 0
     };
 
     const docRef = await addDoc(tasksRef, task);
@@ -342,6 +344,13 @@ export const addTaskComment = async (taskId, userId, comment) => {
     };
 
     const docRef = await addDoc(commentsRef, commentData);
+
+    // Update the task's comment count
+    const taskRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskRef, {
+      commentCount: increment(1)
+    });
+
     return { id: docRef.id, ...commentData };
   } catch (error) {
     console.error('Error adding comment:', error);
@@ -383,6 +392,13 @@ export const deleteTaskComment = async (taskId, commentId) => {
   try {
     const commentRef = doc(db, 'tasks', taskId, 'comments', commentId);
     await deleteDoc(commentRef);
+
+    // Update the task's comment count
+    const taskRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskRef, {
+      commentCount: increment(-1)
+    });
+
     return commentId;
   } catch (error) {
     console.error('Error deleting comment:', error);

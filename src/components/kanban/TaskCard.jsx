@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { MoreVertical, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
+import { MoreVertical, ChevronDown, ChevronUp, Calendar, FolderPlus, MessageCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import MenuDropdown from '../shared/MenuDropdown';
@@ -100,30 +100,40 @@ const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onAr
     return (
         <div
             className={`
-                task-card bg-[var(--color-surface)] 
-                rounded-lg shadow-md p-4 
-                border border-[var(--color-secondary)]/20
-                ${task.completed ? 'opacity-75' : ''}
-                ${isExpanded ? 'z-10 relative mb-10' : 'min-h-52'}
-            `}
+            task-card bg-[var(--color-surface)] 
+            rounded-lg shadow-md p-4 
+            border border-[var(--color-secondary)]/20
+            ${task.completed ? 'opacity-75' : ''}
+            ${isExpanded ? 'z-10 relative mb-10' : 'h-72'}
+            flex flex-col
+        `}
         >
             {/* Header: Title and Menu */}
             <div className="flex justify-between items-start mb-3">
+                {/* Title button stays the same */}
                 <button
                     onClick={() => onSelect(task)}
                     className={`
-                        text-lg font-medium text-left transition-colors
-                        ${task.completed
+                    text-lg font-medium text-left transition-colors
+                    ${task.completed
                             ? 'text-[var(--color-text)]/50 line-through hover:line-through'
                             : 'text-[var(--color-text)] hover:text-[var(--color-primary)]'
                         }
-                    `}
+                `}
                 >
                     {task.name}
                 </button>
 
-                {/* UPDATED: Menu Button with simplified onClick handler */}
-                <div className="relative">
+                {/* Menu button stays the same */}
+                <div className="relative flex items-center gap-2">
+                    {task.commentCount > 0 && (
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--color-primary)]/10">
+                            <MessageCircle className="w-3 h-3 text-[var(--color-primary)]" />
+                            <span className="text-xs font-medium text-[var(--color-primary)]">
+                                {task.commentCount}
+                            </span>
+                        </div>
+                    )}
                     <button
                         ref={buttonRef}
                         onClick={handleMenuToggle}
@@ -134,94 +144,103 @@ const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onAr
                 </div>
             </div>
 
-            {/* Description (if any) */}
-            {task.description && (
-                <div className="mb-3 overflow-hidden">
-                    <div
-                        className={`
+            {/* Description (if any) - with flex growing */}
+            <div className="flex-grow overflow-hidden">
+                {task.description && (
+                    <div className="mb-3">
+                        <div
+                            className={`
                             text-[var(--color-text)]/60 text-sm 
                             prose prose-invert max-w-none
                             ${!isExpanded && 'line-clamp-2'}
                         `}
-                        dangerouslySetInnerHTML={{ __html: task.description }}
-                    />
-                    {task.description.length > 100 && (
-                        <button
-                            onClick={() => {
-                                setIsExpanded(!isExpanded);
-                                if (onExpand) {
-                                    onExpand(!isExpanded);
-                                }
-                            }}
-                            className="text-sm mt-1 flex items-center gap-1 text-[var(--color-secondary)] hover:text-[var(--color-text)]"
-                        >
-                            {isExpanded ? (
-                                <>
-                                    <ChevronUp className="w-4 h-4" />
-                                    Show Less
-                                </>
-                            ) : (
-                                <>
-                                    <ChevronDown className="w-4 h-4" />
-                                    Show More
-                                </>
-                            )}
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* Task Metadata: Difficulty, Priority, XP */}
-            <div className="grid grid-cols-3 mb-4">
-                <div className="flex flex-col">
-                    <span className="text-xs text-[var(--color-secondary)] mb-1">Difficulty</span>
-                    <span className={`text-sm font-medium ${getTagColor('difficulty', task.difficulty)}`}>
-                        {task.difficulty.charAt(0).toUpperCase() + task.difficulty.slice(1)}
-                    </span>
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-xs text-[var(--color-secondary)] mb-1">Priority</span>
-                    <span className={`text-sm font-medium ${getTagColor('priority', task.priority)}`}>
-                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                    </span>
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-xs text-[var(--color-secondary)] mb-1">Experience</span>
-                    <span className="text-sm font-bold text-[var(--color-primary)]">
-                        {task.xp} XP
-                    </span>
-                </div>
+                            dangerouslySetInnerHTML={{ __html: task.description }}
+                        />
+                        {task.description.length > 100 && (
+                            <button
+                                onClick={() => {
+                                    setIsExpanded(!isExpanded);
+                                    if (onExpand) {
+                                        onExpand(!isExpanded);
+                                    }
+                                }}
+                                className="text-sm mt-1 flex items-center gap-1 text-[var(--color-secondary)] hover:text-[var(--color-text)]"
+                            >
+                                {isExpanded ? (
+                                    <>
+                                        <ChevronUp className="w-4 h-4" />
+                                        Show Less
+                                    </>
+                                ) : (
+                                    <>
+                                        <ChevronDown className="w-4 h-4" />
+                                        Show More
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* Deadline */}
-            <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[var(--color-text)]" />
-                <span className="text-xs text-[var(--color-secondary)]">Due Date</span>
-                <span className="text-sm text-[var(--color-text)]">
-                    {task.deadline ? new Date(task.deadline + 'T00:00:00').toLocaleDateString() : 'No due date'}
-                </span>
+            {/* Footer section - fixed position at bottom */}
+            <div className="mt-auto space-y-3">
+                {/* Task Metadata */}
+                <div className="grid grid-cols-3">
+                    <div className="flex flex-col">
+                        <span className="text-xs text-[var(--color-secondary)] mb-1">Difficulty</span>
+                        <span className={`text-sm font-medium ${getTagColor('difficulty', task.difficulty)}`}>
+                            {task.difficulty.charAt(0).toUpperCase() + task.difficulty.slice(1)}
+                        </span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs text-[var(--color-secondary)] mb-1">Priority</span>
+                        <span className={`text-sm font-medium ${getTagColor('priority', task.priority)}`}>
+                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                        </span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs text-[var(--color-secondary)] mb-1">Experience</span>
+                        <span className="text-sm font-bold text-[var(--color-primary)]">
+                            {task.xp} XP
+                        </span>
+                    </div>
+                </div>
+
+                {/* Deadline */}
+                <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[var(--color-text)]" />
+                    <span className="text-xs text-[var(--color-secondary)]">Due Date</span>
+                    <span className="text-sm text-[var(--color-text)]">
+                        {task.deadline ? new Date(task.deadline + 'T00:00:00').toLocaleDateString() : 'No due date'}
+                    </span>
+                </div>
+
+                {/* Project Tags */}
+                {task.projects?.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        {task.projects.map((project) => (
+                            <button
+                                key={project.id}
+                                onClick={(e) => handleProjectClick(e, project.id)}
+                                className="px-3 py-1.5 text-xs rounded-full 
+                                bg-[var(--color-primary)]/10 
+                                text-[var(--color-primary)]
+                                hover:bg-[var(--color-primary)]/20 
+                                hover:shadow-md
+                                border border-[var(--color-primary)]/20
+                                transition-all duration-200
+                                flex items-center gap-1.5"
+                            >
+                                <FolderPlus className="w-3 h-3" />
+                                {project.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {/* Project Tags */}
-            {task.projects?.length > 0 && (
-                <div className="flex gap-2 mt-4">
-                    {task.projects.map((project) => (
-                        <button
-                            key={project.id}
-                            onClick={(e) => handleProjectClick(e, project.id)}
-                            className="px-2 py-1 text-xs rounded-full 
-                         bg-[var(--color-primary)]/20 
-                         text-[var(--color-primary)]
-                         hover:bg-[var(--color-primary)]/30 
-                         transition-colors"
-                        >
-                            {project.name}
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* ADDED: Menu Dropdown Portal */}
+            {/* Menu Dropdown Portal stays the same */}
             {isMenuOpen && menuVisible && ReactDOM.createPortal(
                 <div
                     className="fixed z-[9999]"
@@ -244,8 +263,6 @@ const TaskCard = ({ task, onComplete, onDelete, onEdit, onSelect, onExpand, onAr
                 </div>,
                 document.body
             )}
-
-
         </div>
     );
 };
@@ -260,6 +277,7 @@ TaskCard.propTypes = {
         priority: PropTypes.string.isRequired,
         completed: PropTypes.bool.isRequired,
         xp: PropTypes.number.isRequired,
+        commentCount: PropTypes.number,
         projects: PropTypes.arrayOf(PropTypes.shape({
             id: PropTypes.string.isRequired,
             name: PropTypes.string.isRequired,

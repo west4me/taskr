@@ -12,7 +12,9 @@ import {
     getColumns,
     handleTaskCompletion,
     archiveTask,
-    getArchivedTasks
+    getArchivedTasks,
+    getTaskComments,
+    updateColumn,
 } from '../../services/taskService';
 import { getUserProfile } from '../../services/userService';
 import { createColumn } from '../../services/taskService';
@@ -69,14 +71,22 @@ export const TaskProvider = ({ children }) => {
                     columnsToUse = createdColumns;
                 }
 
-                const tasksWithStatus = userTasks.map((task) => ({
-                    ...task,
-                    status: task.status && columnsToUse.some((col) => col.id === task.status)
-                        ? task.status
-                        : columnsToUse[0]?.id || null
+                // Load comment counts for all tasks
+                const tasksWithComments = await Promise.all(userTasks.map(async task => {
+                    const comments = await getTaskComments(task.id);
+                    return {
+                        ...task,
+                        commentCount: comments.length,
+                        status: task.status && columnsToUse.some((col) => col.id === task.status)
+                            ? task.status
+                            : columnsToUse[0]?.id || null
+                    };
                 }));
 
-                setTasks(tasksWithStatus);
+
+
+
+                setTasks(tasksWithComments);
                 setArchivedTasks(archivedTasksData);
                 setColumns(columnsToUse.sort((a, b) => a.order - b.order));
                 setBadges(userBadges);

@@ -25,6 +25,19 @@ const inputClasses = `
   transition-colors
 `;
 
+const XPDisplay = ({ xp }) => (
+  <div className="flex items-center gap-2">
+    <p className="text-sm text-[var(--color-text)]/60">Total XP:</p>
+    <p className="text-lg font-bold text-[var(--color-primary)]">
+      {xp} XP
+    </p>
+  </div>
+);
+
+XPDisplay.propTypes = {
+  xp: PropTypes.number.isRequired
+};
+
 const TaskModal = ({ isOpen, onClose, onSubmit, initialData, mode = 'create', columns }) => {
   const [taskData, setTaskData] = useState(defaultData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,6 +142,7 @@ const TaskModal = ({ isOpen, onClose, onSubmit, initialData, mode = 'create', co
       isOpen={isOpen}
       onClose={onClose}
       title={mode === 'create' ? 'Create New Task' : 'Edit Task'}
+      rightContent={<XPDisplay xp={calculatedXP} />}
     >
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
         {/* Main Content */}
@@ -285,33 +299,25 @@ const TaskModal = ({ isOpen, onClose, onSubmit, initialData, mode = 'create', co
 
         {/* Footer */}
         <div className="mt-auto px-6 py-4 border-t border-[var(--color-secondary)]/40">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-[var(--color-text)]/60">Total XP:</p>
-              <p className="text-lg font-bold text-[var(--color-primary)]">
-                {calculatedXP} XP
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? 'Submitting...'
-                  : mode === 'create'
-                    ? 'Create Task'
-                    : 'Save Changes'}
-              </button>
-            </div>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? 'Submitting...'
+                : mode === 'create'
+                  ? 'Create Task'
+                  : 'Save Changes'}
+            </button>
           </div>
         </div>
       </form>

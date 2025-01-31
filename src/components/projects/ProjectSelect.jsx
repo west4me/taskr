@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, FolderPlus } from 'lucide-react';
 import useAuth from '../../contexts/AuthContext/useAuth';
 import { getUserProjects, addProject } from '../../services/projectService';
 
@@ -74,23 +74,22 @@ const ProjectSelect = ({ value = [], onChange }) => {
         {value.map((project) => (
           <span
             key={project.id}
-            className="
-              px-2 py-1 text-sm rounded-full 
-              bg-[var(--color-primary)]/20 text-[var(--color-primary)] 
-              flex items-center gap-1
-            "
+            className="px-3 py-1.5 text-xs rounded-full 
+        bg-[var(--color-primary)]/10 
+        text-[var(--color-primary)]
+        border border-[var(--color-primary)]/20
+        flex items-center gap-1.5"
           >
+            <FolderPlus className="w-3 h-3" />
             {project.name}
             <button
               onClick={() => handleRemoveProject(project.id)}
-              className="
-                hover:text-[var(--color-text)]
-                transition-colors
-              "
+              className="ml-1 p-0.5 hover:bg-[var(--color-primary)]/20 rounded-full
+          transition-colors"
               type="button"
               aria-label="Remove project"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </button>
           </span>
         ))}

@@ -6,6 +6,7 @@ import {
   BarChart2,
   MessageSquare,
   FileText,
+  FolderPlus,
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ import {
 import useAuth from '../../contexts/AuthContext/useAuth';
 import RichTextEditor from '../tasks/RichTextEditor';
 import TaskComment from './TaskComment';
+import { useNavigate } from 'react-router-dom';
 
 const TaskDetailsSidebar = ({ task, isOpen, onClose, onTaskUpdate }) => {
   const sidebarRef = useRef();
@@ -201,6 +203,13 @@ const TaskDetailsSidebar = ({ task, isOpen, onClose, onTaskUpdate }) => {
     }
   };
 
+  const navigate = useNavigate();
+
+  const handleProjectClick = (e, projectId) => {
+    e.stopPropagation();
+    navigate(`/taskr/project/${projectId}`);
+  };
+
   if (!task || !editableTask) return null;
 
   const calculateXP = (difficulty, priority) => {
@@ -257,15 +266,23 @@ const TaskDetailsSidebar = ({ task, isOpen, onClose, onTaskUpdate }) => {
                     onBlur={handleTitleBlur}
                   />
                   {task.projects?.length > 0 && (
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {task.projects.map((project) => (
-                        <span
+                        <button
                           key={project.id}
-                          className="px-2 py-1 text-xs rounded-full bg-[var(--color-primary)]/20 
-                                     text-[var(--color-primary)]"
+                          onClick={(e) => handleProjectClick(e, project.id)}
+                          className="px-3 py-1.5 text-xs rounded-full 
+                  bg-[var(--color-primary)]/10 
+                  text-[var(--color-primary)]
+                  hover:bg-[var(--color-primary)]/20 
+                  hover:shadow-md
+                  border border-[var(--color-primary)]/20
+                  transition-all duration-200
+                  flex items-center gap-1.5"
                         >
+                          <FolderPlus className="w-3 h-3" />
                           {project.name}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   )}

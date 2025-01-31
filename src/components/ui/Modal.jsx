@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, rightContent }) => {
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -64,24 +64,20 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--color-secondary)]/30">
               <h2
                 id="modal-title"
-                className="text-xl font-semibold text-[var(--color-text)]"
+                className="w-full text-xl font-semibold text-[var(--color-text)]"
               >
                 {title}
               </h2>
-              <button
-                onClick={onClose}
-                className="
-                  text-[var(--color-text)]/60 
-                  hover:text-[var(--color-text)] 
-                  transition-colors 
-                  rounded-lg 
-                  p-1 
-                  hover:bg-[var(--color-secondary)]/10
-                "
-                aria-label="Close modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-4 flex-shrink-0">
+                {rightContent}
+                <button
+                  onClick={onClose}
+                  className="text-[var(--color-text)]/60 hover:text-[var(--color-text)] transition-colors rounded-lg p-1 hover:bg-[var(--color-secondary)]/10"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Content - single scrollable area */}
@@ -100,6 +96,7 @@ Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
+  rightContent: PropTypes.node,
 };
 
 export default Modal;

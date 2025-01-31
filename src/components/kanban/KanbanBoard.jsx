@@ -258,9 +258,12 @@ const KanbanBoard = ({
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 flex-grow overflow-auto">
+        <div className="grid auto-rows-fr gap-2 flex-grow overflow-auto"
+          style={{
+            gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`,
+          }}>
           {localColumns.map((column, index) => (
-            <div key={column.id} className="bg-[var(--color-surface)] rounded-lg p-2 flex flex-col min-h-[500px]">
+            <div key={column.id} className="flex flex-col min-h-[500px] bg-[var(--color-surface)] rounded-lg p-2" style={{ minWidth: 0 }}>
               <div className="flex items-center justify-between mb-4">
                 {editingColumn === column.id ? (
                   <input
@@ -285,7 +288,7 @@ const KanbanBoard = ({
                     autoFocus
                   />
                 ) : (
-                    <h3 className="font-medium text-lg text-[var(--color-text)] pl-2 -mb-2">{column.title}</h3>
+                  <h3 className="font-medium text-lg text-[var(--color-text)] pl-2 -mb-2">{column.title}</h3>
                 )}
                 <div className="flex items-center gap-2">
                   <button
