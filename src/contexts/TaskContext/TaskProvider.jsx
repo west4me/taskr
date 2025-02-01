@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import TaskContext from './TaskContext';
 import useAuth from '../../contexts/AuthContext/useAuth';
 import { getUserBadges } from '../../services/badgeService';
+import { updateStreak } from '../../services/userService';
 import {
     createTask,
     getUserTasks,
@@ -120,21 +121,49 @@ export const TaskProvider = ({ children }) => {
     };
 
     const handleTaskComplete = async (taskId) => {
-        const taskToUpdate = tasks.find((t) => t.id === taskId);
-        if (!taskToUpdate) return;
-
-        const isCompleting = !taskToUpdate.completed;
-
         try {
-            await handleTaskCompletion(user.uid, taskId, isCompleting);
-            setTasks(prev => prev.map(task =>
-                task.id === taskId ? { ...task, completed: isCompleting } : task
-            ));
+            console.log("🟢 Handling task completion in TaskProvider...");
+
+            const task = tasks.find((t) => t.id === taskId);
+            if (!task) throw new Error("Task not found in state.");
+
+            const isCompleting = !task.completed;
+            const { xpData, completed } = await handleTaskCompletion(user.uid, taskId, isCompleting);
+
+            // ✅ Update XP in React state
+            setUserData((prevUserData) => ({
+                ...prevUserData,
+                totalXP: xpData.totalXP,
+                currentXP: xpData.currentXP,
+                level: xpData.level,
+                nextLevelXP: xpData.nextLevelXP
+            }));
+
+            // ✅ Update Streak when completing a task
+            if (completed) {
+                const updatedStreak = await updateStreak(user.uid);
+                setUserData((prevUserData) => ({
+                    ...prevUserData,
+                    currentStreak: updatedStreak.currentStreak,
+                    longestStreak: updatedStreak.longestStreak
+                }));
+            }
+
+            // ✅ Update task completion in React state
+            setTasks((prevTasks) =>
+                prevTasks.map((t) =>
+                    t.id === taskId ? { ...t, completed } : t
+                )
+            );
+
+            console.log("🎉 Task, XP, and Streak updated in React state!");
+
         } catch (error) {
-            console.error('Error completing task:', error);
-            throw error;
+            console.error("❌ Error completing task:", error);
         }
     };
+
+
 
     const handleTaskUpdate = async (taskId, updates) => {
         try {

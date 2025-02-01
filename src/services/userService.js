@@ -1,6 +1,31 @@
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, writeBatch, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, writeBatch, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 
+// 🔄 Subscribe to real-time XP updates (used by UI components)
+export const subscribeToXP = (userId, callback) => {
+    if (!userId) {
+        console.warn("⚠️ subscribeToXP called with no userId");
+        return () => { }; // Return empty function to avoid errors
+    }
+
+    const userRef = doc(db, "users", userId);
+
+    console.log("📡 subscribeToXP CALLED - Listening for XP changes for:", userId);
+
+    return onSnapshot(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const userData = snapshot.data();
+            console.log("🔥 Firestore XP Update Received:", userData.totalXP);
+            callback(userData.totalXP);
+        } else {
+            console.warn("⚠️ No XP data found in Firestore for user:", userId);
+        }
+    }, (error) => {
+        console.error("❌ Error in subscribeToXP:", error);
+    });
+};
+
+// 📌 Initialize user profile if it doesn't exist
 export const initializeUserProfile = async (userId) => {
     try {
         const userRef = doc(db, 'users', userId);
@@ -27,6 +52,7 @@ export const initializeUserProfile = async (userId) => {
     }
 };
 
+// 📌 Get user profile from Firestore
 export const getUserProfile = async (userId) => {
     try {
         const userRef = doc(db, 'users', userId);
@@ -43,37 +69,48 @@ export const getUserProfile = async (userId) => {
     }
 };
 
+// 📌 Fetch current XP for user
+export const getUserXP = async (userId) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        const docSnap = await getDoc(userRef);
+        return docSnap.exists() ? docSnap.data().currentXP : 0;
+    } catch (error) {
+        console.error("Error fetching user XP:", error);
+        throw error;
+    }
+};
+
+// 📌 Update user XP when completing tasks
 export const updateUserXP = async (userId, xpChange) => {
     try {
         const userRef = doc(db, 'users', userId);
         const userSnap = await getDoc(userRef);
         const userData = userSnap.data();
 
-        const newTotalXP = Math.max(0, userData.totalXP + xpChange);
-        const newCurrentXP = Math.max(0, userData.currentXP + xpChange);
+        let { totalXP, currentXP, level, nextLevelXP } = userData;
 
-        let { level, nextLevelXP } = userData;
+        totalXP = Math.max(0, totalXP + xpChange);
+        currentXP = Math.max(0, currentXP + xpChange);
 
+        // Level-up logic
         if (xpChange > 0) {
-            while (newCurrentXP >= nextLevelXP) {
+            while (currentXP >= nextLevelXP) {
                 level += 1;
                 nextLevelXP = calculateNextLevelXP(level);
             }
         } else if (xpChange < 0) {
-            while (newCurrentXP < calculateNextLevelXP(level - 1) && level > 1) {
+            while (currentXP < calculateNextLevelXP(level - 1) && level > 1) {
                 level -= 1;
                 nextLevelXP = calculateNextLevelXP(level);
             }
         }
 
-        const updates = {
-            totalXP: newTotalXP,
-            currentXP: newCurrentXP,
-            level,
-            nextLevelXP
-        };
+        const updates = { totalXP, currentXP, level, nextLevelXP };
 
         await updateDoc(userRef, updates);
+        console.log("✅ XP successfully updated:", updates);
+
         return updates;
     } catch (error) {
         console.error('Error updating user XP:', error);
@@ -81,6 +118,7 @@ export const updateUserXP = async (userId, xpChange) => {
     }
 };
 
+// 📌 Update user streaks based on login activity
 export const updateStreak = async (userId) => {
     try {
         const userRef = doc(db, 'users', userId);
@@ -101,7 +139,7 @@ export const updateStreak = async (userId) => {
             currentStreak += 1;
             longestStreak = Math.max(currentStreak, longestStreak);
         } else if (lastActive !== today) {
-            // Reset streak if not active yesterday (and not already logged in today)
+            // Reset streak if not active yesterday
             currentStreak = 1;
         }
 
@@ -111,6 +149,7 @@ export const updateStreak = async (userId) => {
             longestStreak
         });
 
+        console.log("🔥 Streak updated:", { currentStreak, longestStreak });
         return { currentStreak, longestStreak };
     } catch (error) {
         console.error('Error updating streak:', error);
@@ -118,63 +157,28 @@ export const updateStreak = async (userId) => {
     }
 };
 
+// 📌 XP curve formula for leveling up
 const calculateNextLevelXP = (level) => {
-    // Basic XP curve: each level requires 20% more XP than the previous
     return Math.round(1000 * Math.pow(1.2, level - 1));
 };
 
+// 📌 Delete all user data
 export const deleteAllUserData = async (userId, onSuccess) => {
     try {
-        // Create a new batch
         const batch = writeBatch(db);
+        const userDocRef = doc(db, 'users', userId);
+        const collectionsToDelete = ['tasks', 'columns', 'projects', 'badges'];
 
-        // 1. Delete tasks and their comments
-        const tasksRef = collection(db, 'tasks');
-        const tasksQuery = query(tasksRef, where('userId', '==', userId));
-        const tasksDocs = await getDocs(tasksQuery);
-
-        // We might need multiple batches if there are many documents
         let operationCount = 0;
         let currentBatch = batch;
 
-        for (const taskDoc of tasksDocs.docs) {
-            // Get comments for this task
-            const commentsRef = collection(taskDoc.ref, 'comments');
-            const comments = await getDocs(commentsRef);
+        for (const collectionName of collectionsToDelete) {
+            const collectionRef = collection(db, collectionName);
+            const q = query(collectionRef, where('userId', '==', userId));
+            const docs = await getDocs(q);
 
-            // Delete comments
-            for (const comment of comments.docs) {
-                currentBatch.delete(comment.ref);
-                operationCount++;
-
-                if (operationCount >= 499) {
-                    await currentBatch.commit();
-                    currentBatch = writeBatch(db);
-                    operationCount = 0;
-                }
-            }
-
-            // Delete the task
-            currentBatch.delete(taskDoc.ref);
-            operationCount++;
-
-            if (operationCount >= 499) {
-                await currentBatch.commit();
-                currentBatch = writeBatch(db);
-                operationCount = 0;
-            }
-        }
-
-        // 2. Delete user's sub-collections
-        const userDocRef = doc(db, 'users', userId);
-        const subCollections = ['columns', 'projects', 'badges'];
-
-        for (const collectionName of subCollections) {
-            const collectionRef = collection(userDocRef, collectionName);
-            const docs = await getDocs(collectionRef);
-
-            for (const doc of docs.docs) {
-                currentBatch.delete(doc.ref);
+            for (const docSnap of docs.docs) {
+                currentBatch.delete(docSnap.ref);
                 operationCount++;
 
                 if (operationCount >= 499) {
@@ -185,7 +189,7 @@ export const deleteAllUserData = async (userId, onSuccess) => {
             }
         }
 
-        // 3. Reset the user document
+        // Reset user profile
         currentBatch.update(userDocRef, {
             level: 1,
             currentXP: 0,
@@ -197,18 +201,13 @@ export const deleteAllUserData = async (userId, onSuccess) => {
             badges: []
         });
 
-        // Commit any remaining operations
         if (operationCount > 0) {
             await currentBatch.commit();
         }
 
-        console.log('All user data deleted successfully');
-        // Call the success callback if provided
-        if (typeof onSuccess === 'function') {
-            onSuccess();
-        }
+        console.log("✅ All user data deleted successfully");
+        if (typeof onSuccess === 'function') onSuccess();
         return true;
-
     } catch (error) {
         console.error('Error deleting user data:', error);
         throw error;
