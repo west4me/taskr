@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { updateUserXP, updateStreak } from './userService';
+import { updateUserXP } from './userService';
 import {
   collection,
   addDoc,
@@ -114,52 +114,35 @@ export const deleteTask = async (taskId) => {
 
 export const handleTaskCompletion = async (userId, taskId, isCompleting) => {
   try {
-    console.log('Starting task completion:', { userId, taskId, isCompleting });
+    console.log("✅ Starting task completion process...");
 
-    const taskRef = doc(db, 'tasks', taskId);
-    const snapshot = await getDoc(taskRef);
-    if (!snapshot.exists()) throw new Error(`Task ${taskId} not found`);
+    // Fetch the task from Firestore
+    const taskRef = doc(db, "tasks", taskId);
+    const taskSnap = await getDoc(taskRef);
+    if (!taskSnap.exists()) throw new Error("Task not found.");
 
-    const taskData = snapshot.data();
-    console.log('Task data:', taskData);
+    const taskData = taskSnap.data();
+    const xpChange = isCompleting ? taskData.xp : -taskData.xp;
 
-    const { xp = 0, order, status } = taskData;
-    const updates = {
+    // Update the task completion status
+    await updateDoc(taskRef, {
       completed: isCompleting,
-      completedAt: isCompleting ? new Date().toISOString() : null,
-      order: order || 0,
-      status
-    };
+      completedAt: isCompleting ? new Date().toISOString() : null
+    });
 
-    await updateDoc(taskRef, updates);
-    console.log('Task updated:', updates);
+    console.log("🔥 Task updated in Firestore:", { completed: isCompleting });
 
-    let updatedXP = null;
-    if (xp) {
-      const xpChange = isCompleting ? xp : -xp;
-      console.log('Updating XP:', { xpChange });
-      updatedXP = await updateUserXP(userId, xpChange);
-      console.log('XP updated:', updatedXP);
-    }
+    // Update XP in Firestore
+    const userXP = await updateUserXP(userId, xpChange);
+    console.log("🔥 XP updated in Firestore:", userXP);
 
-    if (isCompleting) {
-      await updateStreak(userId);
-    }
-
-    const result = {
-      id: taskId,
-      xp,
-      ...updates,
-      userData: updatedXP
-    };
-    console.log('Returning result:', result);
-    return result;
-
+    return { xpData: userXP, completed: isCompleting }; // ✅ Return only essential data
   } catch (error) {
-    console.error('Error in handleTaskCompletion:', error);
+    console.error("❌ Error in handleTaskCompletion:", error);
     throw error;
   }
 };
+
 
 
 
