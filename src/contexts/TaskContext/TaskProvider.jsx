@@ -20,6 +20,9 @@ import {
 import { getUserProfile } from '../../services/userService';
 import { createColumn } from '../../services/taskService';
 import { getUserProjects } from '../../services/projectService';
+import { checkAndAwardBadges } from '../../services/badgeService';
+import Notification from '../../components/ui/Notification'; // NEW: We'll use a direct Notification approach.
+import { AnimatePresence } from 'framer-motion';
 
 export const TaskProvider = ({ children }) => {
     const [tasks, setTasks] = useState([]);
@@ -37,11 +40,32 @@ export const TaskProvider = ({ children }) => {
     });
     const [projects, setProjects] = useState([]);
 
+    // === NEW: In-app ephemeral notifications ===
+    const [notification, setNotification] = useState(null);
+
+    const showNotification = (msg, type = 'info', icon, subtitle, duration = 4000) => {
+        setNotification({
+            message: msg,
+            type,
+            icon,
+            subtitle,
+            duration,
+        });
+    };
+    // Clear after close
+    const handleCloseNotification = () => setNotification(null);
 
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [userTasks, userColumns, archivedTasksData, userBadges, profile, userProjects] = await Promise.all([
+                const [
+                    userTasks,
+                    userColumns,
+                    archivedTasksData,
+                    userBadges,
+                    profile,
+                    userProjects,
+                ] = await Promise.all([
                     getUserTasks(user.uid),
                     getColumns(user.uid),
                     getArchivedTasks(user.uid),
@@ -59,13 +83,13 @@ export const TaskProvider = ({ children }) => {
 
                 let columnsToUse = userColumns;
 
+                // If no columns, create default
                 if (!userColumns.length) {
                     const defaultColumns = [
                         { title: 'To Do', order: 0 },
                         { title: 'In Progress', order: 1 },
-                        { title: 'Done', order: 2 }
+                        { title: 'Done', order: 2 },
                     ];
-
                     const createdColumns = await Promise.all(
                         defaultColumns.map((column) => createColumn(user.uid, column))
                     );
@@ -73,19 +97,19 @@ export const TaskProvider = ({ children }) => {
                 }
 
                 // Load comment counts for all tasks
-                const tasksWithComments = await Promise.all(userTasks.map(async task => {
-                    const comments = await getTaskComments(task.id);
-                    return {
-                        ...task,
-                        commentCount: comments.length,
-                        status: task.status && columnsToUse.some((col) => col.id === task.status)
-                            ? task.status
-                            : columnsToUse[0]?.id || null
-                    };
-                }));
-
-
-
+                const tasksWithComments = await Promise.all(
+                    userTasks.map(async (task) => {
+                        const comments = await getTaskComments(task.id);
+                        return {
+                            ...task,
+                            commentCount: comments.length,
+                            status:
+                                task.status && columnsToUse.some((col) => col.id === task.status)
+                                    ? task.status
+                                    : columnsToUse[0]?.id || null,
+                        };
+                    })
+                );
 
                 setTasks(tasksWithComments);
                 setArchivedTasks(archivedTasksData);
@@ -105,75 +129,124 @@ export const TaskProvider = ({ children }) => {
         }
     }, [user?.uid]);
 
-    // Task-related handlers
     const handleCreateTask = async (taskData) => {
         try {
             const newTask = await createTask(user.uid, {
                 ...taskData,
                 status: taskData.status || columns[0]?.id || null,
             });
-            setTasks(prev => [...prev, newTask]);
+            setTasks((prev) => [...prev, newTask]);
+            // FUN NEW NOTIFICATION
+            showNotification(`Task "${newTask.name}" created!`, 'success');
             return newTask;
         } catch (error) {
             console.error('Error creating task:', error);
+            showNotification('Error creating task. Please try again.', 'error');
             throw error;
         }
     };
 
+    // Enhanced: Show a big celebration if user gains a level or a new badge
+    const showLevelUpNotification = (newLevel) => {
+        showNotification(
+            `LEVEL UP! You reached level ${newLevel}!`,
+            'achievement',
+            null,
+            "Keep it going! You're unstoppable!",
+            6000
+        );
+    };
+
+    // Called after awarding badges, show a separate notification for each newly earned badge
+    const showBadgeNotifications = (newBadges) => {
+        newBadges.forEach((badge) => {
+            showNotification(
+                `New Badge Unlocked: ${badge.name}`,
+                'achievement',
+                null,
+                badge.description || '',
+                7000
+            );
+        });
+    };
+
     const handleTaskComplete = async (taskId) => {
         try {
-            console.log("🟢 Handling task completion in TaskProvider...");
-
             const task = tasks.find((t) => t.id === taskId);
-            if (!task) throw new Error("Task not found in state.");
+            if (!task) throw new Error('Task not found in state.');
 
             const isCompleting = !task.completed;
             const { xpData, completed } = await handleTaskCompletion(user.uid, taskId, isCompleting);
 
-            // ✅ Update XP in React state
-            setUserData((prevUserData) => ({
-                ...prevUserData,
+            // Update React state with new XP
+            setUserData((prev) => ({
+                ...prev,
                 totalXP: xpData.totalXP,
                 currentXP: xpData.currentXP,
                 level: xpData.level,
-                nextLevelXP: xpData.nextLevelXP
+                nextLevelXP: xpData.nextLevelXP,
             }));
 
-            // ✅ Update Streak when completing a task
+            // Check if user leveled up
+            if (xpData.level > task?.level) {
+                showLevelUpNotification(xpData.level);
+            }
+
+            // Update Streak if completing a task
             if (completed) {
                 const updatedStreak = await updateStreak(user.uid);
                 setUserData((prevUserData) => ({
                     ...prevUserData,
                     currentStreak: updatedStreak.currentStreak,
-                    longestStreak: updatedStreak.longestStreak
+                    longestStreak: updatedStreak.longestStreak,
                 }));
+
+                // show a completion notification
+                showNotification(`Task "${task.name}" completed! 🏆`, 'achievement', null, 'Great job!');
+            } else {
+                showNotification(`Task "${task.name}" marked incomplete.`, 'info');
             }
 
-            // ✅ Update task completion in React state
+            // Update local state for tasks
             setTasks((prevTasks) =>
-                prevTasks.map((t) =>
-                    t.id === taskId ? { ...t, completed } : t
-                )
+                prevTasks.map((t) => (t.id === taskId ? { ...t, completed } : t))
             );
 
-            console.log("🎉 Task, XP, and Streak updated in React state!");
+            // *** BADGE CHECK ***
+            // Re-check user’s badges after completing tasks
+            const updatedTasks = tasks.map((t) =>
+                t.id === task.id ? { ...t, completed } : t
+            );
+            const completedCount = updatedTasks.filter((t) => t.completed).length;
 
+            const newlyAwardedBadges = await checkAndAwardBadges(user.uid, xpData, completedCount, updatedTasks);
+            if (newlyAwardedBadges.length > 0) {
+                // refresh user badges
+                setBadges((prev) => [
+                    ...prev,
+                    ...newlyAwardedBadges.map((b) => ({
+                        ...b,
+                        earned: true,
+                    })),
+                ]);
+                showBadgeNotifications(newlyAwardedBadges);
+            }
         } catch (error) {
-            console.error("❌ Error completing task:", error);
+            console.error('Error completing task:', error);
+            showNotification('Error completing task', 'error');
         }
     };
-
-
 
     const handleTaskUpdate = async (taskId, updates) => {
         try {
             const updatedTask = await updateTask(taskId, updates);
-            setTasks(prev => prev.map(task =>
-                task.id === taskId ? { ...task, ...updatedTask } : task
-            ));
+            setTasks((prev) =>
+                prev.map((task) => (task.id === taskId ? { ...task, ...updatedTask } : task))
+            );
             return updatedTask;
         } catch (error) {
             console.error('Error updating task:', error);
+            showNotification('Error updating task', 'error');
             throw error;
         }
     };
@@ -181,9 +254,11 @@ export const TaskProvider = ({ children }) => {
     const handleTaskDelete = async (taskId) => {
         try {
             await deleteTask(taskId);
-            setTasks(prev => prev.filter(task => task.id !== taskId));
+            setTasks((prev) => prev.filter((task) => task.id !== taskId));
+            showNotification('Task deleted successfully!', 'success');
         } catch (error) {
             console.error('Error deleting task:', error);
+            showNotification('Error deleting task', 'error');
             throw error;
         }
     };
@@ -191,11 +266,13 @@ export const TaskProvider = ({ children }) => {
     const handleArchiveTask = async (taskId) => {
         try {
             await archiveTask(taskId);
-            const archivedTask = tasks.find(t => t.id === taskId);
-            setTasks(prev => prev.filter(t => t.id !== taskId));
-            setArchivedTasks(prev => [...prev, { ...archivedTask, archived: true }]);
+            const archivedTask = tasks.find((t) => t.id === taskId);
+            setTasks((prev) => prev.filter((t) => t.id !== taskId));
+            setArchivedTasks((prev) => [...prev, { ...archivedTask, archived: true }]);
+            showNotification(`Task "${archivedTask.name}" archived!`, 'info');
         } catch (error) {
             console.error('Error archiving task:', error);
+            showNotification('Error archiving task', 'error');
             throw error;
         }
     };
@@ -203,12 +280,13 @@ export const TaskProvider = ({ children }) => {
     const handleColumnUpdate = async (columnId, updates) => {
         try {
             const updatedColumn = await updateColumn(user.uid, columnId, updates);
-            setColumns(prev => prev.map(col =>
-                col.id === columnId ? { ...col, ...updatedColumn } : col
-            ));
+            setColumns((prev) =>
+                prev.map((col) => (col.id === columnId ? { ...col, ...updatedColumn } : col))
+            );
             return updatedColumn;
         } catch (error) {
             console.error('Error updating column:', error);
+            showNotification('Error updating column', 'error');
             throw error;
         }
     };
@@ -230,11 +308,27 @@ export const TaskProvider = ({ children }) => {
         deleteTask: handleTaskDelete,
         archiveTask: handleArchiveTask,
         updateColumn: handleColumnUpdate,
+        showNotification, // Expose if other components need to trigger
     };
 
     return (
         <TaskContext.Provider value={value}>
             {children}
+            {/* Global Notification, displayed in the top-right or center */}
+            <AnimatePresence>
+                {notification && (
+                    <Notification
+                        message={notification.message}
+                        type={notification.type}
+                        onClose={handleCloseNotification}
+                        icon={notification.icon}
+                        subtitle={notification.subtitle}
+                        duration={notification.duration}
+                        // Possibly center or top-right
+                        position="top-center" // We'll add a new prop in Notification
+                    />
+                )}
+            </AnimatePresence>
         </TaskContext.Provider>
     );
 };
