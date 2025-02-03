@@ -75,6 +75,24 @@ export const getUserTasks = async (userId) => {
   }
 };
 
+export const getCompletedTasks = async (userId) => {
+  try {
+    const tasksRef = collection(db, 'tasks'); // ✅ Correct Firestore v9 syntax
+    const q = query(tasksRef, where('userId', '==', userId), where('completed', '==', true));
+
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Error fetching completed tasks:", error);
+    return [];
+  }
+};
+
+
 export const updateTask = async (taskId, updates) => {
   try {
     if (!taskId || typeof taskId !== 'string') {

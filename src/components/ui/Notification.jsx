@@ -1,10 +1,9 @@
 // src/components/ui/Notification.jsx
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { X } from 'lucide-react';
-import Confetti from 'react-confetti'; // 1) INSTALL this via `npm install react-confetti`
 
 const Notification = ({
   message,
@@ -15,25 +14,6 @@ const Notification = ({
   duration = 5000,
   position = 'top-center', // "top-right" or "top-center"
 }) => {
-  // For confetti sizing (react-confetti needs width/height)
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Confetti only for achievements (or you can expand this logic)
-  const showConfetti = (type === 'achievement');
 
   // Auto-close after `duration`
   useEffect(() => {
@@ -66,16 +46,6 @@ const Notification = ({
 
   return (
     <>
-      {/* RENDER CONFETTI IF ACHIEVEMENT */}
-      {showConfetti && (
-        <Confetti
-          width={windowSize.width}
-          height={windowSize.height}
-          recycle={false}
-          numberOfPieces={300}
-        />
-      )}
-
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
